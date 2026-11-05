@@ -1,14 +1,14 @@
-# CashVec
+# CachVec
 
 Fast vector fingerprinting and semantic deduplication for embeddings, with no vector database required.
 
-Find exact and near-duplicate embeddings in your RAG pipeline, skip repeated work, and keep your index clean. CashVec runs in-process, has no required dependencies (NumPy is optional), and gives deterministic results.
+Find exact and near-duplicate embeddings in your RAG pipeline, skip repeated work, and keep your index clean. CachVec runs in-process, has no required dependencies (NumPy is optional), and gives deterministic results.
 
 ```python
 import numpy as np
-import cashvec
+import cachvec
 
-engine = cashvec.DedupEngine(dim=384, threshold=0.95)
+engine = cachvec.DedupEngine(dim=384, threshold=0.95)
 
 for doc_id, embedding in documents:              # embedding: numpy array or list of floats
     duplicates = engine.check_and_insert(doc_id, embedding)
@@ -16,12 +16,12 @@ for doc_id, embedding in documents:              # embedding: numpy array or lis
         print(f"{doc_id} ~ {m.id}  cosine={m.score:.3f}  exact={m.exact}")
 ```
 
-CashVec **reports** duplicate candidates and their scores. It never deletes anything; you decide what to do with them.
+CachVec **reports** duplicate candidates and their scores. It never deletes anything; you decide what to do with them.
 
 ## Install
 
 ```sh
-pip install cashvec
+pip install cachvec
 ```
 
 > Not published to PyPI yet. Until then, see [Install from source](#install-from-source).
@@ -33,7 +33,7 @@ Requires Python 3.9+. NumPy is optional; plain lists work everywhere.
 ### Find similar embeddings
 
 ```python
-index = cashvec.VectorIndex(dim=384)
+index = cachvec.VectorIndex(dim=384)
 index.insert_many(ids, matrix)                       # matrix: (n, 384) float32/float64 array
 index.insert("doc-new", embedding)
 
@@ -46,7 +46,7 @@ Results are sorted best-first (ties broken by ID) and every hit has a verified c
 ### Deduplicate
 
 ```python
-engine = cashvec.DedupEngine(dim=384, threshold=0.95)
+engine = cachvec.DedupEngine(dim=384, threshold=0.95)
 engine.insert("doc-1", emb_a)
 
 engine.is_exact_duplicate(emb_a)                     # True
@@ -60,17 +60,17 @@ engine.remove("doc-1")
 
 ```python
 # Exact: identifies the vector's data (not its meaning). Same data -> same hex string.
-cashvec.exact_fingerprint(embedding)                 # "0c309483e547e0d097e4f3bfb8926624"
+cachvec.exact_fingerprint(embedding)                 # "0c309483e547e0d097e4f3bfb8926624"
 
 # SimHash: similar vectors get similar bit signatures.
-hasher = cashvec.SimHasher(dim=384, bits=256)
+hasher = cachvec.SimHasher(dim=384, bits=256)
 a, b = hasher.hash(emb_a), hasher.hash(emb_b)
 a.hamming_distance(b)                                # e.g. 20 (out of 256 bits)
 a.estimated_cosine(b)                                # approximate cosine similarity
 a.is_similar_to(b, 0.9)
 a.to_bytes()                                         # compact binary form, e.g. for storage
 
-cashvec.VectorHasher(bits=128).hash(embedding)       # same, but works with any dimension
+cachvec.VectorHasher(bits=128).hash(embedding)       # same, but works with any dimension
 ```
 
 ## How it works
@@ -104,9 +104,9 @@ Dense, near-duplicate detection (cosine ≥ 0.9) is the sweet spot. For looser s
 
 ## Performance
 
-Measured in Python (`notebooks/cashvec_demo.ipynb`) on one development laptop: 20,000 random 384-dimensional vectors, 200 queries, cosine ≈ 0.96 to a planted neighbour, `threshold=0.9`, `k=10`, default settings.
+Measured in Python (`notebooks/cachvec_demo.ipynb`) on one development laptop: 20,000 random 384-dimensional vectors, 200 queries, cosine ≈ 0.96 to a planted neighbour, `threshold=0.9`, `k=10`, default settings.
 
-| | CashVec | NumPy brute force |
+| | CachVec | NumPy brute force |
 |---|---|---|
 | Search latency | 46 µs/query | 1,117 µs/query |
 | Recall@10 | 1.000 (200/200) | exact |
@@ -114,11 +114,46 @@ Measured in Python (`notebooks/cashvec_demo.ipynb`) on one development laptop: 2
 
 Bulk insertion ran at about 41,000 vectors/s, and the index used about 61 MiB (the raw vectors are 29 MiB; the rest is hash tables). These are single runs on synthetic data, so treat them as indicative and rerun the notebook on your hardware and data. Results on real embeddings will differ, and I have not benchmarked 100k+ vectors from Python.
 
+## Text: chunking and embedding
+
+`TextChunker` splits text into overlapping chunks by length (characters, never cutting words in half), an embedder turns chunks into vectors, and `TextVectorizer` ties them to an index. (Requires NumPy.)
+
+```python
+from cachvec import TextChunker, HashingEmbedder, TextVectorizer
+
+vec = TextVectorizer(
+    TextChunker(chunk_size=1000, overlap=200),   # max 1000 characters per chunk, 200 shared
+    HashingEmbedder(dim=384),
+)
+
+chunks, matrix = vec.vectorize(long_text)       # chunks[i].text / .start / .end  <->  matrix[i]
+
+index = cachvec.VectorIndex(vec.dim)
+vec.add(index, "report-2024", long_text)        # inserts ids "report-2024#0", "report-2024#1", ...
+
+engine = cachvec.DedupEngine(vec.dim, threshold=0.95)
+for chunk, matches in vec.dedup(engine, "doc-2", other_text):   # reports, never deletes
+    if matches:
+        print(chunk.index, "looks like", matches[0].id, matches[0].score)
+```
+
+**Embedders.** The built-in `HashingEmbedder` needs no model or download. It hashes words and word pairs, so it detects **shared wording** (copied or lightly edited text), not paraphrases. For semantic similarity, plug in a real model:
+
+```python
+from sentence_transformers import SentenceTransformer
+model = SentenceTransformer("all-MiniLM-L6-v2")
+vec = TextVectorizer(embedder=cachvec.CallableEmbedder(model.encode, dim=384))
+```
+
+Any function that maps a list of strings to an `(n, dim)` array works. Chunks with no embeddable content (e.g. only punctuation) are dropped. Chunking is length-based by default; `unit="words"` and `unit="sentences"` are also available, and `snap_to_words=False` gives exact character cuts. Sentence splitting is a simple punctuation rule and will split abbreviations like "e.g.".
+
+**Searching with a short query.** A query is usually only loosely similar to a passage (cosine around 0.5 to 0.7), which the default index settings are not tuned for; they find near-duplicates. For retrieval-style queries, build the index with `bits_per_table=6` (and keep `num_tables=16` or more), or use `index.search_brute_force(q, k, 0.0)` on small corpora. Embed the query with `vec.embed_query(text)`.
+
 ## Behavior and guarantees
 
 - **Deterministic.** The same input and `seed` always give the same fingerprints and bucket assignments, across runs and platforms.
 - **Scale invariant.** Hashing and search depend on direction, not length (cosine similarity).
-- **Validated input.** NaN, infinity, empty vectors, zero vectors, and wrong dimensions raise `cashvec.CashVecError` (a subclass of `ValueError`). Nothing crashes the interpreter.
+- **Validated input.** NaN, infinity, empty vectors, zero vectors, and wrong dimensions raise `cachvec.CachVecError` (a subclass of `ValueError`). Nothing crashes the interpreter.
 - **Input types.** 1-D `float32`/`float64` arrays or lists for single vectors; 2-D arrays (one vector per row) for batches.
 - **Threading.** Search and hashing release the GIL. Indexes are not internally synchronized, so guard shared instances with a lock if you write from multiple threads.
 - **In memory only.** There is no persistence yet.
@@ -134,25 +169,26 @@ Bulk insertion ran at about 41,000 vectors/s, and the index used about 61 MiB (t
 | `VectorHasher(bits, seed=None)` | `hash` (any dimension) |
 | `Fingerprint` | `hamming_distance`, `estimated_cosine`, `is_similar_to`, `to_bytes`, `bits`; hashable and comparable |
 | `exact_fingerprint(v)`, `cosine_similarity(a, b)` | helpers |
-| `CashVecError` | raised on invalid input |
+| `TextChunker`, `Chunk`, `HashingEmbedder`, `CallableEmbedder`, `TextVectorizer` | text chunking and embedding (see above) |
+| `CachVecError` | raised on invalid input |
 
 `insert_many` stops at the first error; rows before it stay inserted.
 
 ## Try it
 
-`notebooks/cashvec_demo.ipynb` is a runnable walkthrough with plots: SimHash accuracy, recall against theory, tuning, and a dedup simulation.
+`notebooks/cachvec_demo.ipynb` is a runnable walkthrough with plots: SimHash accuracy, recall against theory, tuning, and a dedup simulation.
 
 ## Install from source
 
 The core is compiled, so building from source needs a [Rust toolchain](https://rustup.rs).
 
 ```sh
-git clone <repo-url> && cd cashvec
+git clone <repo-url> && cd cachvec
 python3 -m venv .venv && source .venv/bin/activate
 pip install maturin numpy matplotlib jupyterlab pytest
-(cd cashvec-py && maturin develop --release)
-pytest cashvec-py/tests
-jupyter lab notebooks/cashvec_demo.ipynb
+(cd cachvec-py && maturin develop --release)
+pytest cachvec-py/tests
+jupyter lab notebooks/cachvec_demo.ipynb
 ```
 
 `maturin build --release` produces a wheel. One `abi3` wheel per platform covers Python 3.9 and later.

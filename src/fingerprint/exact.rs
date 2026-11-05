@@ -128,7 +128,7 @@ pub fn fingerprint(v: &[f32]) -> Result<ExactFingerprint> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::error::CashVecError;
+    use crate::error::CachVecError;
 
     #[test]
     fn deterministic_and_discriminating() {
@@ -157,7 +157,7 @@ mod tests {
 
     #[test]
     fn rejects_invalid() {
-        assert_eq!(fingerprint(&[]), Err(CashVecError::EmptyVector));
+        assert_eq!(fingerprint(&[]), Err(CachVecError::EmptyVector));
         assert!(fingerprint(&[f32::NAN]).is_err());
         assert!(fingerprint(&[f32::INFINITY]).is_err());
     }

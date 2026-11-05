@@ -3,7 +3,7 @@ requires = ["maturin>=1.5,<2"]
 build-backend = "maturin"
 
 [project]
-name = "cashvec"
+name = "cachvec"
 version = "0.1.0"
 description = "Vector fingerprinting (SimHash, LSH) and semantic deduplication for embeddings"
 readme = "README.md"
@@ -21,6 +21,6 @@ numpy = ["numpy>=1.21"]
 test = ["pytest", "numpy>=1.21"]
 
 [tool.maturin]
-module-name = "cashvec._cashvec"
+module-name = "cachvec._cachvec"
 python-source = "python"
 features = ["pyo3/extension-module"]

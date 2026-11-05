@@ -13,7 +13,7 @@
 //! Hyperplanes are generated deterministically from the seed.
 
 use super::BinaryFingerprint;
-use crate::error::{CashVecError, Result};
+use crate::error::{CachVecError, Result};
 use crate::rng::{fill_plane, plane_key, DEFAULT_SEED};
 use crate::vector::operations::dot_unchecked;
 use crate::vector::validation::validate_dimension;
@@ -30,17 +30,17 @@ impl HyperplaneSet {
     /// Generates `count` planes of dimension `dim` from `seed`.
     pub fn new(dim: usize, count: usize, seed: u64) -> Result<Self> {
         if dim == 0 {
-            return Err(CashVecError::InvalidConfig("dim must be >= 1".into()));
+            return Err(CachVecError::InvalidConfig("dim must be >= 1".into()));
         }
         if count == 0 {
-            return Err(CashVecError::InvalidConfig(
+            return Err(CachVecError::InvalidConfig(
                 "hyperplane count must be >= 1".into(),
             ));
         }
         let total = dim
             .checked_mul(count)
             .filter(|t| t.checked_mul(4).is_some() && *t <= (1usize << 32))
-            .ok_or_else(|| CashVecError::InvalidConfig("dim * planes too large".into()))?;
+            .ok_or_else(|| CachVecError::InvalidConfig("dim * planes too large".into()))?;
         let mut planes = vec![0.0f32; total];
         for (p, chunk) in planes.chunks_exact_mut(dim).enumerate() {
             fill_plane(plane_key(seed, p as u64), chunk);
@@ -129,15 +129,15 @@ impl LshConfig {
     /// Checks parameter ranges.
     pub fn validate(&self) -> Result<()> {
         if self.dim == 0 {
-            return Err(CashVecError::InvalidConfig("dim must be >= 1".into()));
+            return Err(CachVecError::InvalidConfig("dim must be >= 1".into()));
         }
         if !(1..=1024).contains(&self.num_tables) {
-            return Err(CashVecError::InvalidConfig(
+            return Err(CachVecError::InvalidConfig(
                 "num_tables must be in 1..=1024".into(),
             ));
         }
         if !(1..=64).contains(&self.bits_per_table) {
-            return Err(CashVecError::InvalidConfig(
+            return Err(CachVecError::InvalidConfig(
                 "bits_per_table must be in 1..=64".into(),
             ));
         }

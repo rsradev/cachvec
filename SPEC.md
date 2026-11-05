@@ -1,4 +1,4 @@
-# CashVec 0.1.0 — Implementation Spec
+# CachVec 0.1.0 — Implementation Spec
 
 Records the decisions made where the project brief left room. The brief is `Claude.md`.
 

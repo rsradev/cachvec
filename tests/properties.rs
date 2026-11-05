@@ -1,8 +1,8 @@
 //! Property-style tests over many seeded random inputs (no external crates).
 mod common;
-use cashvec::similarity::hamming_distance;
-use cashvec::vector::{norm, normalized};
-use cashvec::*;
+use cachvec::similarity::hamming_distance;
+use cachvec::vector::{norm, normalized};
+use cachvec::*;
 use common::Rng;
 
 const CASES: u64 = 200;

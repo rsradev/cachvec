@@ -77,7 +77,7 @@ impl DedupEngine {
     ) -> Result<Vec<DuplicateMatch>> {
         let id = id.into();
         if self.index.contains(&id) {
-            return Err(crate::error::CashVecError::DuplicateId(id));
+            return Err(crate::error::CachVecError::DuplicateId(id));
         }
         let matches = self.find_similar(embedding, self.threshold)?;
         self.index.insert(id, embedding)?;

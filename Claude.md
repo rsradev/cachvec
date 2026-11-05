@@ -1,4 +1,4 @@
-CashVec
+CachVec
 
 High-Performance Vector Fingerprinting & Semantic Deduplication Library
 
@@ -12,11 +12,11 @@ Primary domain: AI Infrastructure, RAG, Vector Search, Semantic Deduplication
 
 1. Project Overview
 
-CashVec is a lightweight, high-performance Rust library designed for vector fingerprinting, similarity hashing, and semantic deduplication.
+CachVec is a lightweight, high-performance Rust library designed for vector fingerprinting, similarity hashing, and semantic deduplication.
 
 The primary objective is to provide an efficient mechanism for identifying identical and semantically similar embedding vectors without requiring a dedicated vector database.
 
-CashVec should be usable as an independent library in:
+CachVec should be usable as an independent library in:
 
 * Retrieval-Augmented Generation (RAG) pipelines.
 * Semantic search applications.
@@ -41,7 +41,7 @@ This creates several challenges:
 4. Vector databases may contain redundant information.
 5. Traditional cryptographic hashes cannot identify similar vectors.
 
-CashVec aims to address these problems through deterministic vector fingerprinting and approximate similarity hashing.
+CachVec aims to address these problems through deterministic vector fingerprinting and approximate similarity hashing.
 
 3. Core Objectives
 
@@ -62,7 +62,7 @@ The initial implementation must support:
 
 The library must follow a modular architecture.
 
-cashvec/
+cachvec/
 │
 ├── Cargo.toml
 ├── README.md
@@ -235,7 +235,7 @@ The public API should be simple and ergonomic.
 
 Illustrative interface:
 
-use cashvec::VectorHasher;
+use cachvec::VectorHasher;
 fn main() {
     let hasher = VectorHasher::new(128);
     let embedding = vec![
@@ -268,7 +268,7 @@ These interfaces are illustrative. Final API design must prioritize consistency,
 
 7. Performance Requirements
 
-CashVec must prioritize:
+CachVec must prioritize:
 
 * Low computational overhead.
 * Low memory consumption.
@@ -504,7 +504,7 @@ The initial MVP is considered complete when:
 
 14. Engineering Philosophy
 
-CashVec should remain:
+CachVec should remain:
 
 * Lightweight.
 * Fast.
@@ -517,4 +517,4 @@ The project should prioritize algorithmic correctness before optimization.
 
 No performance claims should be made without reproducible benchmarks.
 
-The long-term objective is to develop CashVec into an independent vector fingerprinting and semantic deduplication engine for modern AI and RAG infrastructure.
+The long-term objective is to develop CachVec into an independent vector fingerprinting and semantic deduplication engine for modern AI and RAG infrastructure.

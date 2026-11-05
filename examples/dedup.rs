@@ -1,6 +1,6 @@
-use cashvec::{DedupConfig, DedupEngine, IndexConfig, VectorIndex};
+use cachvec::{DedupConfig, DedupEngine, IndexConfig, VectorIndex};
 
-fn main() -> cashvec::Result<()> {
+fn main() -> cachvec::Result<()> {
     let a = [0.12, 0.45, 0.78, 0.21];
     let b = [0.12, 0.45, 0.78, 0.22];
 

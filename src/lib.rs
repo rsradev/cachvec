@@ -1,4 +1,4 @@
-//! # CashVec
+//! # CachVec
 //!
 //! Vector fingerprinting and semantic deduplication for embeddings, written
 //! against the Rust standard library only.
@@ -12,7 +12,7 @@
 //! * [`dedup::DedupEngine`]: duplicate *reporting* (never deletion).
 //!
 //! ```
-//! use cashvec::{DedupConfig, DedupEngine, VectorHasher};
+//! use cachvec::{DedupConfig, DedupEngine, VectorHasher};
 //!
 //! let hasher = VectorHasher::new(128);
 //! let fp = hasher.hash(&[0.12, 0.45, 0.78, 0.21]).unwrap();
@@ -33,7 +33,7 @@ pub mod similarity;
 pub mod vector;
 
 pub use dedup::{DedupConfig, DedupEngine, DuplicateMatch};
-pub use error::{CashVecError, Result};
+pub use error::{CachVecError, Result};
 pub use fingerprint::{
     exact_fingerprint, BinaryFingerprint, ExactFingerprint, ExactFingerprinter, HyperplaneSet, Lsh,
     LshConfig, SimHasher, VectorHasher,

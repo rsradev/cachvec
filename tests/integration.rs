@@ -1,5 +1,5 @@
 mod common;
-use cashvec::*;
+use cachvec::*;
 use common::Rng;
 
 fn index(dim: usize) -> VectorIndex {
@@ -25,7 +25,7 @@ fn duplicate_id_is_rejected_and_index_unchanged() {
     idx.insert("a", &[1.0, 0.0]).unwrap();
     assert_eq!(
         idx.insert("a", &[0.0, 1.0]),
-        Err(CashVecError::DuplicateId("a".into()))
+        Err(CachVecError::DuplicateId("a".into()))
     );
     assert_eq!(idx.len(), 1);
     assert_eq!(idx.get("a"), Some(&[1.0, 0.0][..]));
@@ -34,12 +34,12 @@ fn duplicate_id_is_rejected_and_index_unchanged() {
 #[test]
 fn invalid_inputs_never_panic() {
     let mut idx = index(3);
-    assert_eq!(idx.insert("e", &[]), Err(CashVecError::EmptyVector));
-    assert_eq!(idx.insert("n", &[1.0, f32::NAN, 0.0]), Err(CashVecError::InvalidValue { index: 1 }));
-    assert_eq!(idx.insert("i", &[f32::INFINITY, 0.0, 0.0]), Err(CashVecError::InvalidValue { index: 0 }));
-    assert_eq!(idx.insert("z", &[0.0; 3]), Err(CashVecError::ZeroNorm));
-    assert_eq!(idx.insert("o", &[1e30; 3]), Err(CashVecError::NormOverflow));
-    assert!(matches!(idx.insert("d", &[1.0; 2]), Err(CashVecError::DimensionMismatch { .. })));
+    assert_eq!(idx.insert("e", &[]), Err(CachVecError::EmptyVector));
+    assert_eq!(idx.insert("n", &[1.0, f32::NAN, 0.0]), Err(CachVecError::InvalidValue { index: 1 }));
+    assert_eq!(idx.insert("i", &[f32::INFINITY, 0.0, 0.0]), Err(CachVecError::InvalidValue { index: 0 }));
+    assert_eq!(idx.insert("z", &[0.0; 3]), Err(CachVecError::ZeroNorm));
+    assert_eq!(idx.insert("o", &[1e30; 3]), Err(CachVecError::NormOverflow));
+    assert!(matches!(idx.insert("d", &[1.0; 2]), Err(CachVecError::DimensionMismatch { .. })));
     assert!(idx.is_empty());
     assert!(idx.search(&[], 5, 0.5).is_err());
     assert!(idx.search(&[1.0, 0.0, 0.0], 5, f32::NAN).is_err());

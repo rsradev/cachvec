@@ -7,9 +7,9 @@
 //! Data is synthetic and seeded, so runs are reproducible on the same
 //! machine. Queries are noisy copies (cosine ~0.97) of random indexed
 //! vectors, so each has at least one true neighbour above the threshold.
-//! Memory is CashVec's own capacity-based estimate, not RSS.
+//! Memory is CachVec's own capacity-based estimate, not RSS.
 
-use cashvec::{IndexConfig, VectorHasher, VectorIndex};
+use cachvec::{IndexConfig, VectorHasher, VectorIndex};
 use std::hint::black_box;
 use std::time::Instant;
 

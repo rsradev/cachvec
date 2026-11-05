@@ -1,5 +1,5 @@
 [package]
-name = "cashvec"
+name = "cachvec"
 version = "0.1.0"
 edition = "2021"
 description = "High-performance vector fingerprinting and semantic deduplication (SimHash, random-hyperplane LSH) in pure Rust std."
@@ -9,7 +9,7 @@ keywords = ["lsh", "simhash", "embeddings", "deduplication", "rag"]
 categories = ["algorithms", "data-structures", "science"]
 
 [workspace]
-members = ["cashvec-py"]
+members = ["cachvec-py"]
 
 [dependencies]
 

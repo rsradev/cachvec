@@ -4,7 +4,7 @@
 //! results are deterministic and the compiler can auto-vectorize the loop.
 
 use super::validation::validate;
-use crate::error::{CashVecError, Result};
+use crate::error::{CachVecError, Result};
 
 /// Dot product without validation. Iterates over the shorter slice.
 #[inline]
@@ -30,7 +30,7 @@ fn check_pair(a: &[f32], b: &[f32]) -> Result<()> {
     validate(a)?;
     validate(b)?;
     if a.len() != b.len() {
-        return Err(CashVecError::DimensionMismatch {
+        return Err(CachVecError::DimensionMismatch {
             expected: a.len(),
             actual: b.len(),
         });
@@ -51,16 +51,16 @@ pub fn norm(v: &[f32]) -> f32 {
 
 /// Normalizes `v` in place to unit length.
 ///
-/// Fails with [`CashVecError::ZeroNorm`] for the zero vector and
-/// [`CashVecError::NormOverflow`] if the norm is not representable.
+/// Fails with [`CachVecError::ZeroNorm`] for the zero vector and
+/// [`CachVecError::NormOverflow`] if the norm is not representable.
 pub fn normalize(v: &mut [f32]) -> Result<()> {
     validate(v)?;
     let n = norm(v);
     if !n.is_finite() {
-        return Err(CashVecError::NormOverflow);
+        return Err(CachVecError::NormOverflow);
     }
     if n == 0.0 {
-        return Err(CashVecError::ZeroNorm);
+        return Err(CachVecError::ZeroNorm);
     }
     let inv = 1.0 / n;
     v.iter_mut().for_each(|x| *x *= inv);
@@ -103,7 +103,7 @@ mod tests {
     fn dot_rejects_mismatch() {
         assert!(matches!(
             dot(&[1.0], &[1.0, 2.0]),
-            Err(CashVecError::DimensionMismatch { .. })
+            Err(CachVecError::DimensionMismatch { .. })
         ));
     }
 
@@ -116,8 +116,8 @@ mod tests {
 
     #[test]
     fn normalize_rejects_zero_and_overflow() {
-        assert_eq!(normalized(&[0.0, 0.0]), Err(CashVecError::ZeroNorm));
-        assert_eq!(normalized(&[1e30, 1e30]), Err(CashVecError::NormOverflow));
+        assert_eq!(normalized(&[0.0, 0.0]), Err(CachVecError::ZeroNorm));
+        assert_eq!(normalized(&[1e30, 1e30]), Err(CachVecError::NormOverflow));
     }
 
     #[test]

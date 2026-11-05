@@ -1,6 +1,6 @@
 //! Cosine similarity.
 
-use crate::error::{CashVecError, Result};
+use crate::error::{CachVecError, Result};
 use crate::vector::operations::{dot_unchecked, norm};
 use crate::vector::validation::validate;
 
@@ -12,17 +12,17 @@ pub fn cosine_similarity(a: &[f32], b: &[f32]) -> Result<f32> {
     validate(a)?;
     validate(b)?;
     if a.len() != b.len() {
-        return Err(CashVecError::DimensionMismatch {
+        return Err(CachVecError::DimensionMismatch {
             expected: a.len(),
             actual: b.len(),
         });
     }
     let (na, nb) = (norm(a), norm(b));
     if !na.is_finite() || !nb.is_finite() {
-        return Err(CashVecError::NormOverflow);
+        return Err(CachVecError::NormOverflow);
     }
     if na == 0.0 || nb == 0.0 {
-        return Err(CashVecError::ZeroNorm);
+        return Err(CachVecError::ZeroNorm);
     }
     Ok((dot_unchecked(a, b) / (na * nb)).clamp(-1.0, 1.0))
 }
@@ -53,7 +53,7 @@ mod tests {
     fn errors() {
         assert_eq!(
             cosine_similarity(&[0.0, 0.0], &[1.0, 1.0]),
-            Err(CashVecError::ZeroNorm)
+            Err(CachVecError::ZeroNorm)
         );
         assert!(cosine_similarity(&[1.0], &[1.0, 2.0]).is_err());
         assert!(cosine_similarity(&[], &[]).is_err());

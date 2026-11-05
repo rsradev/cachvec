@@ -1,14 +1,14 @@
-//! Error types used across CashVec.
+//! Error types used across CachVec.
 
 use std::fmt;
 
-/// Errors returned by CashVec operations.
+/// Errors returned by CachVec operations.
 ///
-/// CashVec never panics on invalid user input; every failure is reported
+/// CachVec never panics on invalid user input; every failure is reported
 /// through this type.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
-pub enum CashVecError {
+pub enum CachVecError {
     /// The vector has zero dimensions.
     EmptyVector,
     /// Two dimensions that must agree do not.
@@ -29,7 +29,7 @@ pub enum CashVecError {
     CapacityExceeded,
 }
 
-impl fmt::Display for CashVecError {
+impl fmt::Display for CachVecError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::EmptyVector => write!(f, "vector is empty"),
@@ -49,7 +49,7 @@ impl fmt::Display for CashVecError {
     }
 }
 
-impl std::error::Error for CashVecError {}
+impl std::error::Error for CachVecError {}
 
 /// Convenience result alias.
-pub type Result<T> = std::result::Result<T, CashVecError>;
+pub type Result<T> = std::result::Result<T, CachVecError>;

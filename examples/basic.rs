@@ -1,4 +1,4 @@
-use cashvec::{exact_fingerprint, VectorHasher};
+use cachvec::{exact_fingerprint, VectorHasher};
 
 fn main() {
     let embedding = vec![0.12, 0.45, 0.78, 0.21];

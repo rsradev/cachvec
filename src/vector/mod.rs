@@ -67,7 +67,7 @@ impl AsRef<[f32]> for Vector {
 }
 
 impl TryFrom<Vec<f32>> for Vector {
-    type Error = crate::error::CashVecError;
+    type Error = crate::error::CachVecError;
     fn try_from(v: Vec<f32>) -> Result<Self> {
         Vector::new(v)
     }

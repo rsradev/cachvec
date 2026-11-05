@@ -24,7 +24,7 @@
 
 use super::lsh::HyperplaneSet;
 use super::BinaryFingerprint;
-use crate::error::{CashVecError, Result};
+use crate::error::{CachVecError, Result};
 use crate::rng::{fill_plane, plane_key, DEFAULT_SEED};
 use crate::vector::operations::dot_unchecked;
 use crate::vector::validation::validate;
@@ -36,7 +36,7 @@ fn check_bits(bits: usize) -> Result<()> {
     if (1..=MAX_BITS).contains(&bits) {
         Ok(())
     } else {
-        Err(CashVecError::InvalidConfig(format!(
+        Err(CachVecError::InvalidConfig(format!(
             "bits must be in 1..={MAX_BITS}, got {bits}"
         )))
     }
@@ -53,7 +53,7 @@ impl VectorHasher {
     /// A hasher producing `bits`-bit signatures with the default seed.
     ///
     /// `bits` is validated lazily: [`hash`](Self::hash) returns
-    /// [`CashVecError::InvalidConfig`] unless `1 <= bits <= 4096`.
+    /// [`CachVecError::InvalidConfig`] unless `1 <= bits <= 4096`.
     pub fn new(bits: usize) -> Self {
         Self {
             bits,

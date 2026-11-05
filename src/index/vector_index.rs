@@ -1,7 +1,7 @@
 //! In-memory vector index with LSH candidate retrieval.
 
 use super::buckets::BucketTable;
-use crate::error::{CashVecError, Result};
+use crate::error::{CachVecError, Result};
 use crate::fingerprint::exact::{canonical_eq, fingerprint, ExactFingerprint};
 use crate::fingerprint::lsh::{Lsh, LshConfig};
 use crate::vector::operations::{dot_unchecked, norm};
@@ -23,7 +23,7 @@ pub struct SearchResult {
 /// Validates a similarity threshold (finite, within `[-1, 1]`).
 pub fn check_threshold(t: f32) -> Result<()> {
     if t.is_nan() || !(-1.0..=1.0).contains(&t) {
-        Err(CashVecError::InvalidThreshold)
+        Err(CachVecError::InvalidThreshold)
     } else {
         Ok(())
     }
@@ -103,10 +103,10 @@ impl VectorIndex {
         validate_dimension(v, self.dim)?;
         let n = norm(v);
         if !n.is_finite() {
-            return Err(CashVecError::NormOverflow);
+            return Err(CachVecError::NormOverflow);
         }
         if n == 0.0 {
-            return Err(CashVecError::ZeroNorm);
+            return Err(CachVecError::ZeroNorm);
         }
         Ok(Prepared { inv_norm: 1.0 / n })
     }
@@ -119,11 +119,11 @@ impl VectorIndex {
         let id = id.into();
         let prep = self.prepare(v)?;
         if self.id_map.contains_key(&id) {
-            return Err(CashVecError::DuplicateId(id));
+            return Err(CachVecError::DuplicateId(id));
         }
-        let slot = u32::try_from(self.ids.len()).map_err(|_| CashVecError::CapacityExceeded)?;
+        let slot = u32::try_from(self.ids.len()).map_err(|_| CachVecError::CapacityExceeded)?;
         if slot == u32::MAX {
-            return Err(CashVecError::CapacityExceeded);
+            return Err(CachVecError::CapacityExceeded);
         }
         let fp = fingerprint(v)?;
         let start = self.keys.len();

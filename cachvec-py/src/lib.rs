@@ -1,16 +1,16 @@
-//! Python bindings for CashVec.
+//! Python bindings for CachVec.
 
-use cashvec as core;
+use cachvec as core;
 use numpy::{PyArray1, PyReadonlyArray1, PyReadonlyArray2, PyUntypedArrayMethods};
 use pyo3::create_exception;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use std::borrow::Cow;
 
-create_exception!(_cashvec, CashVecError, PyValueError);
+create_exception!(_cachvec, CachVecError, PyValueError);
 
-fn err(e: core::CashVecError) -> PyErr {
-    CashVecError::new_err(e.to_string())
+fn err(e: core::CachVecError) -> PyErr {
+    CachVecError::new_err(e.to_string())
 }
 
 /// A single embedding: numpy float32/float64 1-D array or a sequence of floats.
@@ -63,13 +63,13 @@ impl Matrix<'_> {
 
 fn check_cols(cols: usize, dim: usize) -> PyResult<()> {
     if cols != dim {
-        return Err(err(core::CashVecError::DimensionMismatch { expected: dim, actual: cols }));
+        return Err(err(core::CachVecError::DimensionMismatch { expected: dim, actual: cols }));
     }
     Ok(())
 }
 
 /// Binary SimHash signature.
-#[pyclass(frozen, eq, hash, name = "Fingerprint", module = "cashvec")]
+#[pyclass(frozen, eq, hash, name = "Fingerprint", module = "cachvec")]
 #[derive(PartialEq, Eq, Hash)]
 struct Fingerprint(core::BinaryFingerprint);
 
@@ -104,7 +104,7 @@ impl Fingerprint {
 }
 
 /// Dimension-agnostic SimHash.
-#[pyclass(frozen, name = "VectorHasher", module = "cashvec")]
+#[pyclass(frozen, name = "VectorHasher", module = "cachvec")]
 struct VectorHasher(core::VectorHasher);
 
 #[pymethods]
@@ -129,7 +129,7 @@ impl VectorHasher {
 }
 
 /// Fixed-dimension SimHash with precomputed hyperplanes (faster per call).
-#[pyclass(frozen, name = "SimHasher", module = "cashvec")]
+#[pyclass(frozen, name = "SimHasher", module = "cachvec")]
 struct SimHasher(core::SimHasher);
 
 #[pymethods]
@@ -197,7 +197,7 @@ fn make_config(
 }
 
 /// In-memory LSH index with exact cosine verification.
-#[pyclass(name = "VectorIndex", module = "cashvec")]
+#[pyclass(name = "VectorIndex", module = "cachvec")]
 struct VectorIndex(core::VectorIndex);
 
 #[pymethods]
@@ -292,7 +292,7 @@ fn pairs(r: Vec<core::SearchResult>) -> Vec<(String, f32)> {
 }
 
 /// A duplicate candidate: `id`, cosine `score`, and whether it is `exact`.
-#[pyclass(frozen, get_all, name = "DuplicateMatch", module = "cashvec")]
+#[pyclass(frozen, get_all, name = "DuplicateMatch", module = "cachvec")]
 struct DuplicateMatch {
     id: String,
     score: f32,
@@ -311,7 +311,7 @@ fn matches(m: Vec<core::DuplicateMatch>) -> Vec<DuplicateMatch> {
 }
 
 /// Semantic deduplication. Reports candidates; never deletes.
-#[pyclass(name = "DedupEngine", module = "cashvec")]
+#[pyclass(name = "DedupEngine", module = "cachvec")]
 struct DedupEngine(core::DedupEngine);
 
 #[pymethods]
@@ -364,8 +364,8 @@ impl DedupEngine {
 }
 
 #[pymodule]
-fn _cashvec(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add("CashVecError", m.py().get_type::<CashVecError>())?;
+fn _cachvec(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add("CachVecError", m.py().get_type::<CachVecError>())?;
     m.add_class::<Fingerprint>()?;
     m.add_class::<VectorHasher>()?;
     m.add_class::<SimHasher>()?;

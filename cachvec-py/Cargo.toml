@@ -1,16 +1,16 @@
 [package]
-name = "cashvec-py"
+name = "cachvec-py"
 version = "0.1.0"
 edition = "2021"
-description = "Python bindings for CashVec"
+description = "Python bindings for CachVec"
 license = "MIT OR Apache-2.0"
 publish = false
 
 [lib]
-name = "_cashvec"
+name = "_cachvec"
 crate-type = ["cdylib"]
 
 [dependencies]
-cashvec = { path = ".." }
+cachvec = { path = ".." }
 pyo3 = { version = "0.30", features = ["extension-module", "abi3-py39"] }
 numpy = "0.30"

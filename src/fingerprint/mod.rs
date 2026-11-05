@@ -8,7 +8,7 @@ pub use exact::{fingerprint as exact_fingerprint, ExactFingerprint, ExactFingerp
 pub use lsh::{HyperplaneSet, Lsh, LshConfig};
 pub use simhash::{SimHasher, VectorHasher};
 
-use crate::error::{CashVecError, Result};
+use crate::error::{CachVecError, Result};
 use crate::similarity::hamming;
 use std::fmt;
 
@@ -52,7 +52,7 @@ impl BinaryFingerprint {
     /// Hamming distance to `other`; fails if the bit lengths differ.
     pub fn hamming_distance(&self, other: &Self) -> Result<u32> {
         if self.bits != other.bits {
-            return Err(CashVecError::DimensionMismatch {
+            return Err(CachVecError::DimensionMismatch {
                 expected: self.bits,
                 actual: other.bits,
             });
@@ -69,7 +69,7 @@ impl BinaryFingerprint {
     /// True if the estimated cosine is at least `min_cosine`.
     pub fn is_similar_to(&self, other: &Self, min_cosine: f32) -> Result<bool> {
         if min_cosine.is_nan() || !(-1.0..=1.0).contains(&min_cosine) {
-            return Err(CashVecError::InvalidThreshold);
+            return Err(CachVecError::InvalidThreshold);
         }
         let d = self.hamming_distance(other)?;
         Ok(d <= hamming::max_hamming_for_cosine(min_cosine, self.bits))

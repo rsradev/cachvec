@@ -1,14 +1,14 @@
 //! Input validation for embedding vectors.
 
-use crate::error::{CashVecError, Result};
+use crate::error::{CachVecError, Result};
 
 /// Validates that `v` is non-empty and contains only finite values.
 pub fn validate(v: &[f32]) -> Result<()> {
     if v.is_empty() {
-        return Err(CashVecError::EmptyVector);
+        return Err(CachVecError::EmptyVector);
     }
     if let Some(index) = v.iter().position(|x| !x.is_finite()) {
-        return Err(CashVecError::InvalidValue { index });
+        return Err(CachVecError::InvalidValue { index });
     }
     Ok(())
 }
@@ -17,7 +17,7 @@ pub fn validate(v: &[f32]) -> Result<()> {
 pub fn validate_dimension(v: &[f32], expected: usize) -> Result<()> {
     validate(v)?;
     if v.len() != expected {
-        return Err(CashVecError::DimensionMismatch {
+        return Err(CachVecError::DimensionMismatch {
             expected,
             actual: v.len(),
         });
@@ -31,18 +31,18 @@ mod tests {
 
     #[test]
     fn rejects_empty_nan_inf() {
-        assert_eq!(validate(&[]), Err(CashVecError::EmptyVector));
+        assert_eq!(validate(&[]), Err(CachVecError::EmptyVector));
         assert_eq!(
             validate(&[1.0, f32::NAN]),
-            Err(CashVecError::InvalidValue { index: 1 })
+            Err(CachVecError::InvalidValue { index: 1 })
         );
         assert_eq!(
             validate(&[f32::INFINITY]),
-            Err(CashVecError::InvalidValue { index: 0 })
+            Err(CachVecError::InvalidValue { index: 0 })
         );
         assert_eq!(
             validate(&[f32::NEG_INFINITY]),
-            Err(CashVecError::InvalidValue { index: 0 })
+            Err(CachVecError::InvalidValue { index: 0 })
         );
         assert!(validate(&[0.0, -0.0, 1.5]).is_ok());
     }
@@ -51,7 +51,7 @@ mod tests {
     fn checks_dimension() {
         assert_eq!(
             validate_dimension(&[1.0, 2.0], 3),
-            Err(CashVecError::DimensionMismatch {
+            Err(CachVecError::DimensionMismatch {
                 expected: 3,
                 actual: 2
             })

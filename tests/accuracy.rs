@@ -1,6 +1,6 @@
 //! Accuracy of hashing and search on synthetic data with known angles.
 mod common;
-use cashvec::*;
+use cachvec::*;
 use common::{at_cosine, Rng};
 
 /// Mean absolute error of the cosine estimate from SimHash Hamming distance.

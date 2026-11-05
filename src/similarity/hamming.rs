@@ -6,12 +6,12 @@
 //! the cosine can be estimated as `cos(π·d/b)`. The estimate has standard
 //! deviation roughly `sqrt(p(1-p)/b)` in `d/b`; more bits tighten it.
 
-use crate::error::{CashVecError, Result};
+use crate::error::{CachVecError, Result};
 
 /// Number of differing bits between two equal-length word slices.
 pub fn hamming_distance(a: &[u64], b: &[u64]) -> Result<u32> {
     if a.len() != b.len() {
-        return Err(CashVecError::DimensionMismatch {
+        return Err(CachVecError::DimensionMismatch {
             expected: a.len(),
             actual: b.len(),
         });
