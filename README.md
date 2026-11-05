@@ -1,93 +1,162 @@
 # CashVec
 
-Vector fingerprinting and semantic deduplication for embeddings. Pure Rust, **zero dependencies** (std only), licensed MIT or Apache-2.0.
+Fast vector fingerprinting and semantic deduplication for embeddings, with no vector database required.
 
-```rust
-use cashvec::{DedupConfig, DedupEngine, VectorHasher};
+Find exact and near-duplicate embeddings in your RAG pipeline, skip repeated work, and keep your index clean. CashVec runs in-process, has no required dependencies (NumPy is optional), and gives deterministic results.
 
-let fp = VectorHasher::new(128).hash(&[0.12, 0.45, 0.78, 0.21])?;   // SimHash
+```python
+import numpy as np
+import cashvec
 
-let mut engine = DedupEngine::new(DedupConfig::new(4))?;
-engine.insert("doc-1", &[0.12, 0.45, 0.78, 0.21])?;
-let dups = engine.find_similar(&[0.12, 0.45, 0.78, 0.22], 0.95)?;   // [DuplicateMatch { id, score, exact }]
+engine = cashvec.DedupEngine(dim=384, threshold=0.95)
+
+for doc_id, embedding in documents:              # embedding: numpy array or list of floats
+    duplicates = engine.check_and_insert(doc_id, embedding)
+    for m in duplicates:
+        print(f"{doc_id} ~ {m.id}  cosine={m.score:.3f}  exact={m.exact}")
 ```
 
-## What's in the box
+CashVec **reports** duplicate candidates and their scores. It never deletes anything; you decide what to do with them.
 
-| Component | Purpose |
-|---|---|
-| `exact_fingerprint` | Deterministic 128-bit hash of vector *data* (`-0.0` canonicalized, dimension included). Not semantic. |
-| `VectorHasher` / `SimHasher` | Binary SimHash signatures; Hamming distance ↔ angle. |
-| `Lsh` / `LshConfig` | Multi-table random-hyperplane LSH, seeded and deterministic. |
-| `VectorIndex` | In-memory index: insert, remove, get by ID / fingerprint, LSH candidates, verified top-K search. |
-| `DedupEngine` | Reports duplicate candidates with scores. **Never deletes anything.** |
-
-## How search works
-
-1. **Candidates** — the query is hashed into `L` tables of `k` bits; vectors sharing a bucket in any table are candidates.
-2. **Verification** — every candidate is scored with exact cosine similarity and kept only if `score >= threshold`.
-3. **Ordering** — score descending, ties broken by ID, so results are deterministic.
-
-Shared buckets and equal fingerprints are never treated as proof of similarity.
-
-### Recall model
-
-Two vectors at angle θ agree on one hyperplane bit with probability `1 − θ/π`. They share a bucket in one table with probability `p^k` and in at least one of `L` tables with probability `1 − (1 − p^k)^L`. Defaults are `L = 16`, `k = 12`:
-
-| cosine | per-bit agree | candidate probability |
-|---|---|---|
-| 0.99 | 0.955 | 1.00 |
-| 0.95 | 0.899 | 0.995 |
-| 0.90 | 0.856 | 0.933 |
-| 0.80 | 0.795 | 0.65 |
-| 0.00 | 0.500 | 0.004 |
-
-Tune `with_tables` / `with_bits_per_table` to trade recall against candidate count. Search can miss neighbours that share no bucket; `search_brute_force` gives ground truth.
-
-## SimHash: Hamming distance vs. angle
-
-Each bit differs with probability `θ/π`, so `E[hamming] = bits · θ/π` and `cos θ ≈ cos(π · d / bits)` (`BinaryFingerprint::estimated_cosine`). The estimate is noisy (std ≈ `sqrt(p(1−p)/bits)` in `d/bits`); use more bits for accuracy and verify with real cosine when precision matters.
-
-## Determinism
-
-Hyperplane coordinates are a pure integer function of `(seed, plane, i)` (no `libm`, no platform RNG), so fingerprints and bucket keys are identical across platforms and runs. Float dot products use a fixed 4-lane summation order; no fused multiply-add is introduced.
-
-## Errors
-
-No panics on user input. Everything returns `Result<_, CashVecError>`: empty vectors, NaN/∞, dimension mismatches, zero-norm vectors, duplicate IDs, bad config and bad thresholds.
-
-## Benchmarks
-
-```
-cargo bench --bench compare                          # 10k × 128
-cargo bench --bench compare -- --n 20000 --dim 768
-cargo bench --bench compare -- --full                # 10k/100k/1M × 128/384/768/1536 (skips combos needing >8 GiB)
-```
-
-Synthetic seeded data; queries are noisy copies of indexed vectors (cosine ≈ 0.97). Measured on the development machine (macOS, release build, single thread), default config (16 tables × 12 bits), threshold 0.9, top-10:
-
-| n | dim | LSH search | brute force | speedup | recall@10 | candidates/query |
-|---|---|---|---|---|---|---|
-| 10,000 | 128 | 14.7 µs | 370.6 µs | 25× | 1.000 | 49.7 (0.5%) |
-| 20,000 | 768 | 98.7 µs | 4,689.9 µs | 47× | 1.000 | 82.2 (0.4%) |
-
-Other measurements at the same settings: SimHash (128 bit) takes 28.8 µs/vector at dim 128 and 135 µs at dim 768; insertion runs at ~117k vectors/s (dim 128) and ~22k/s (dim 768). Index memory is an estimate, about 3× the raw vectors at dim 128 (14.7 vs 4.9 MiB at 10k), mostly the 16 bucket tables. The 100k and 1M configurations have **not** been run yet, so no claims are made for them. Treat these numbers as indicative for one machine, and rerun the benchmark on yours.
-
-## Python
-
-Bindings live in `cashvec-py/` (PyO3 + maturin); see `cashvec-py/README.md`. A runnable tour is in `notebooks/cashvec_demo.ipynb`:
+## Install
 
 ```sh
+pip install cashvec
+```
+
+> Not published to PyPI yet. Until then, see [Install from source](#install-from-source).
+
+Requires Python 3.9+. NumPy is optional; plain lists work everywhere.
+
+## Quickstart
+
+### Find similar embeddings
+
+```python
+index = cashvec.VectorIndex(dim=384)
+index.insert_many(ids, matrix)                       # matrix: (n, 384) float32/float64 array
+index.insert("doc-new", embedding)
+
+index.search(query, k=10, threshold=0.95)            # [("doc-12", 0.987), ("doc-7", 0.961), ...]
+index.search_many(queries, k=10, threshold=0.95)     # one result list per row
+```
+
+Results are sorted best-first (ties broken by ID) and every hit has a verified cosine similarity at or above `threshold`.
+
+### Deduplicate
+
+```python
+engine = cashvec.DedupEngine(dim=384, threshold=0.95)
+engine.insert("doc-1", emb_a)
+
+engine.is_exact_duplicate(emb_a)                     # True
+engine.find_similar(emb_b)                           # [DuplicateMatch(id="doc-1", score=0.98, exact=False)]
+engine.find_similar(emb_b, threshold=0.9)            # override the default threshold
+engine.check_and_insert("doc-2", emb_b)              # report duplicates, then index it
+engine.remove("doc-1")
+```
+
+### Fingerprints
+
+```python
+# Exact: identifies the vector's data (not its meaning). Same data -> same hex string.
+cashvec.exact_fingerprint(embedding)                 # "0c309483e547e0d097e4f3bfb8926624"
+
+# SimHash: similar vectors get similar bit signatures.
+hasher = cashvec.SimHasher(dim=384, bits=256)
+a, b = hasher.hash(emb_a), hasher.hash(emb_b)
+a.hamming_distance(b)                                # e.g. 20 (out of 256 bits)
+a.estimated_cosine(b)                                # approximate cosine similarity
+a.is_similar_to(b, 0.9)
+a.to_bytes()                                         # compact binary form, e.g. for storage
+
+cashvec.VectorHasher(bits=128).hash(embedding)       # same, but works with any dimension
+```
+
+## How it works
+
+1. **Candidates.** Each vector is hashed (random-hyperplane LSH) into several hash tables. Vectors that land in the same bucket as the query become candidates. This avoids comparing the query with every stored vector.
+2. **Verification.** Every candidate is scored with exact cosine similarity and kept only if it meets your threshold.
+3. **Ordering.** Results are sorted by score, then ID, so output is deterministic.
+
+Sharing a bucket or a fingerprint is never treated as proof of similarity.
+
+Search is **approximate**: a true neighbour that shares no bucket with the query can be missed. See [Tuning](#tuning).
+
+## Tuning
+
+`VectorIndex` and `DedupEngine` take two knobs:
+
+| Parameter | Default | Effect |
+|---|---|---|
+| `num_tables` | 16 | More tables: higher recall, more candidates, more memory |
+| `bits_per_table` | 12 | More bits: more selective buckets, fewer candidates, lower recall |
+
+Theoretical chance that a stored vector is retrieved as a candidate, by its cosine similarity to the query (defaults; the notebook compares this curve with measurements):
+
+| cosine | 0.99 | 0.95 | 0.90 | 0.80 | 0.50 | 0.00 |
+|---|---|---|---|---|---|---|
+| candidate | ~100% | ~99.5% | ~93% | ~65% | ~12% | ~0.4% |
+
+Dense, near-duplicate detection (cosine ≥ 0.9) is the sweet spot. For looser similarity, increase `num_tables` or decrease `bits_per_table`. `index.search_brute_force(query)` gives exact results for comparison, and `index.candidates(query)` shows what the hash stage retrieves.
+
+**SimHash accuracy.** Each signature bit differs with probability θ/π, so `cos θ ≈ cos(π · d / bits)`. The estimate is noisy; more bits make it tighter. Use it as a fast filter, and verify with a real cosine when precision matters.
+
+## Performance
+
+Measured in Python (`notebooks/cashvec_demo.ipynb`) on one development laptop: 20,000 random 384-dimensional vectors, 200 queries, cosine ≈ 0.96 to a planted neighbour, `threshold=0.9`, `k=10`, default settings.
+
+| | CashVec | NumPy brute force |
+|---|---|---|
+| Search latency | 46 µs/query | 1,117 µs/query |
+| Recall@10 | 1.000 (200/200) | exact |
+| Candidates examined | ~88 of 20,000 | all |
+
+Bulk insertion ran at about 41,000 vectors/s, and the index used about 61 MiB (the raw vectors are 29 MiB; the rest is hash tables). These are single runs on synthetic data, so treat them as indicative and rerun the notebook on your hardware and data. Results on real embeddings will differ, and I have not benchmarked 100k+ vectors from Python.
+
+## Behavior and guarantees
+
+- **Deterministic.** The same input and `seed` always give the same fingerprints and bucket assignments, across runs and platforms.
+- **Scale invariant.** Hashing and search depend on direction, not length (cosine similarity).
+- **Validated input.** NaN, infinity, empty vectors, zero vectors, and wrong dimensions raise `cashvec.CashVecError` (a subclass of `ValueError`). Nothing crashes the interpreter.
+- **Input types.** 1-D `float32`/`float64` arrays or lists for single vectors; 2-D arrays (one vector per row) for batches.
+- **Threading.** Search and hashing release the GIL. Indexes are not internally synchronized, so guard shared instances with a lock if you write from multiple threads.
+- **In memory only.** There is no persistence yet.
+
+## API summary
+
+| Name | Purpose |
+|---|---|
+| `VectorIndex(dim, num_tables=16, bits_per_table=12, seed=None)` | `insert`, `insert_many`, `remove`, `get`, `search`, `search_many`, `search_brute_force`, `candidates`, `find_exact`, `fingerprint_of`, `memory_usage`, `len()`, `in` |
+| `DedupEngine(dim, threshold=0.95, num_tables=16, bits_per_table=12, seed=None)` | `insert`, `check_and_insert`, `find_similar`, `find_exact`, `is_exact_duplicate`, `remove`, `get`, `len()`, `in` |
+| `DuplicateMatch` | `.id`, `.score`, `.exact` |
+| `SimHasher(dim, bits, seed=None)` | `hash`, `hash_many` |
+| `VectorHasher(bits, seed=None)` | `hash` (any dimension) |
+| `Fingerprint` | `hamming_distance`, `estimated_cosine`, `is_similar_to`, `to_bytes`, `bits`; hashable and comparable |
+| `exact_fingerprint(v)`, `cosine_similarity(a, b)` | helpers |
+| `CashVecError` | raised on invalid input |
+
+`insert_many` stops at the first error; rows before it stay inserted.
+
+## Try it
+
+`notebooks/cashvec_demo.ipynb` is a runnable walkthrough with plots: SimHash accuracy, recall against theory, tuning, and a dedup simulation.
+
+## Install from source
+
+The core is compiled, so building from source needs a [Rust toolchain](https://rustup.rs).
+
+```sh
+git clone <repo-url> && cd cashvec
 python3 -m venv .venv && source .venv/bin/activate
-pip install maturin numpy matplotlib jupyterlab
+pip install maturin numpy matplotlib jupyterlab pytest
 (cd cashvec-py && maturin develop --release)
+pytest cashvec-py/tests
 jupyter lab notebooks/cashvec_demo.ipynb
 ```
 
-## Status
-
-Version 0.1.0 implements the MVP scope in `SPEC.md`. Not yet done: SIMD, multithreading, persistence, Python bindings.
+`maturin build --release` produces a wheel. One `abi3` wheel per platform covers Python 3.9 and later.
 
 ## License
 
-MIT or Apache-2.0, at your option (`LICENSE-MIT`, `LICENSE-APACHE`).
+MIT or Apache-2.0, at your option.
