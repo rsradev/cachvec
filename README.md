@@ -73,6 +73,17 @@ Synthetic seeded data; queries are noisy copies of indexed vectors (cosine ≈ 0
 
 Other measurements at the same settings: SimHash (128 bit) takes 28.8 µs/vector at dim 128 and 135 µs at dim 768; insertion runs at ~117k vectors/s (dim 128) and ~22k/s (dim 768). Index memory is an estimate, about 3× the raw vectors at dim 128 (14.7 vs 4.9 MiB at 10k), mostly the 16 bucket tables. The 100k and 1M configurations have **not** been run yet, so no claims are made for them. Treat these numbers as indicative for one machine, and rerun the benchmark on yours.
 
+## Python
+
+Bindings live in `cashvec-py/` (PyO3 + maturin); see `cashvec-py/README.md`. A runnable tour is in `notebooks/cashvec_demo.ipynb`:
+
+```sh
+python3 -m venv .venv && source .venv/bin/activate
+pip install maturin numpy matplotlib jupyterlab
+(cd cashvec-py && maturin develop --release)
+jupyter lab notebooks/cashvec_demo.ipynb
+```
+
 ## Status
 
 Version 0.1.0 implements the MVP scope in `SPEC.md`. Not yet done: SIMD, multithreading, persistence, Python bindings.

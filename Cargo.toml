@@ -8,6 +8,9 @@ readme = "README.md"
 keywords = ["lsh", "simhash", "embeddings", "deduplication", "rag"]
 categories = ["algorithms", "data-structures", "science"]
 
+[workspace]
+members = ["cashvec-py"]
+
 [dependencies]
 
 [[bench]]

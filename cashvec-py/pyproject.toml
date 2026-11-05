@@ -1,0 +1,26 @@
+[build-system]
+requires = ["maturin>=1.5,<2"]
+build-backend = "maturin"
+
+[project]
+name = "cashvec"
+version = "0.1.0"
+description = "Vector fingerprinting (SimHash, LSH) and semantic deduplication for embeddings"
+readme = "README.md"
+license = { text = "MIT OR Apache-2.0" }
+requires-python = ">=3.9"
+dependencies = []
+classifiers = [
+  "Programming Language :: Rust",
+  "License :: OSI Approved :: MIT License",
+  "License :: OSI Approved :: Apache Software License",
+]
+
+[project.optional-dependencies]
+numpy = ["numpy>=1.21"]
+test = ["pytest", "numpy>=1.21"]
+
+[tool.maturin]
+module-name = "cashvec._cashvec"
+python-source = "python"
+features = ["pyo3/extension-module"]
