@@ -1,0 +1,19 @@
+[package]
+name = "cashvec"
+version = "0.1.0"
+edition = "2021"
+description = "High-performance vector fingerprinting and semantic deduplication (SimHash, random-hyperplane LSH) in pure Rust std."
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+keywords = ["lsh", "simhash", "embeddings", "deduplication", "rag"]
+categories = ["algorithms", "data-structures", "science"]
+
+[dependencies]
+
+[[bench]]
+name = "compare"
+harness = false
+
+[profile.release]
+lto = true
+codegen-units = 1
